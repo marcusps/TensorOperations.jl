@@ -2,9 +2,52 @@
 #
 # Defines the @tensor macro which switches to an index-notation environment.
 
-macro tensor(arg)
-    tensorify(arg)
+macro tensor(ex)
+    tensorify(ex)
 end
+
+
+macro tensoropt(args...)
+    ex = args[end];
+    if isa(args[1],Symbol)
+        polycost = processpolycost(args[2:end-1],args[1])
+        defaultpoly = Power(1,1)
+        optmul(ex,polycost,default)
+    else
+        numcost = processnumcost(args[1:end])
+        defaultnum = 1
+        optmul(ex,numcost,defaultnum)
+    end
+    ex = optmul(ex,cost)
+    tensorify(ex)
+end
+
+function processpolycost(args,var)
+    cost=Dict{Any,Power{Int}}()
+    for i = 1:length(args)
+        ex = args[i]
+        isa(ex,Expr) && ex.head==:(=>) || error("invalid cost specification")
+        c = evalpolyex(ex.args[2],var)
+        isa(c,Power{Int}) || error("only costs a*$var^n are supported with a::Int")
+        l = ex.args[1]
+        if isa(l,Symbol) || isa(l,Char) || isa(l,Number)
+            cost[l] = c
+        elseif isa(l,Expr) && l.head==:tuple
+            for s in l.args
+                if isa(s,Symbol) || isa(s,Char) || isa(s,Number)
+                    cost[s] = c
+                else
+                    error("invalid cost specification")
+                end
+            end
+        else
+            error("invalid cost specification")
+        end
+    end
+    return cost
+end
+
+
 
 function tensorify(ex::Expr)
     if ex.head == :(=) || ex.head == :(:=) || ex.head == :(+=) || ex.head == :(-=)

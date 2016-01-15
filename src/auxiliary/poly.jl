@@ -109,3 +109,23 @@ function Base.(:<)(p1::AbstractPoly,p2::AbstractPoly)
     end
     return false
 end
+
+parsepolyex(ex::Symbol,var::Symbol) = ex==var ? Power(1,1) : error("unknown poly expression $ex")
+parsepolyex(ex::Number,var::Symbol) = ex
+function parsepolyex(ex::Expr,var::Symbol)
+    if ex.head == :call
+        args = map(x->parsepolyex(x,var), ex.args[2:end])
+        if ex.args[1] == :*
+            return *(args...)
+        elseif ex.args[1] == :/
+            return /(args...)
+        elseif ex.args[1] == :^
+            return ^(args...)
+        elseif ex.args[1] == :+
+            return +(args...)
+        elseif ex.args[1] == :-
+            return -(args...)
+        end
+    end
+    error("unknown poly expression: $ex")
+end
