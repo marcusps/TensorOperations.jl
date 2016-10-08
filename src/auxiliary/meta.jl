@@ -1,29 +1,23 @@
 # auxiliary/meta.jl
 #
 # A bunch of auxiliary metaprogramming tools and generated functions
+import Base.tail
 
-@generated function _strides{T,N}(A::StridedArray{T,N})
-    meta = Expr(:meta,:inline)
-    ex = Expr(:tuple,[:(stride(A,$d)) for d = 1:N]...)
-    Expr(:block, meta, ex)
-end
+_indmax(values::Tuple) = __indmax(values[1],1,1,tail(values))
+@inline __indmax(vmax,imax,i,::Tuple{}) = imax
+@inline __indmax(vmax,imax,i,values::Tuple) = vmax > values[1] ? __indmax(vmax,imax,i+1,tail(values)) : __indmax(values[1],i+1,i+1,tail(values))
 
-@generated function _indmax{N,T}(values::NTuple{N,T})
-    meta = Expr(:meta,:inline)
-    Expr(:block, meta, :(dmax = 1), :(max = values[1]), [:(values[$d] > max && (dmax = $d; max = values[$d])) for d = 2:N]..., :(return dmax))
-end
+_permute(src::Tuple, p) = __permute((), src, p)
+@inline __permute{N}(dst::NTuple{N}, src::NTuple{N}, p) = dst
+@inline __permute{N}(dst::NTuple{N}, src::Tuple, p) = @inbounds return __permute(tuple(dst...,src[p[N+1]]), src, p)
 
-@generated function _permute{T,N}(t::NTuple{N,T}, p)
-    meta = Expr(:meta,:inline)
-    ex = Expr(:tuple,[:(t[p[$d]]) for d = 1:N]...)
-    Expr(:block, meta, ex)
-end
+_memjumps{N}(dims::NTuple{N,Int},strides::NTuple{N,Int}) = __memjumps((), dims, strides)
+@inline __memjumps{N}(jumps::NTuple{N}, dims::NTuple{N}, strides::NTuple{N}) = jumps
+@inline __memjumps{N}(jumps::NTuple{N}, dims::Tuple, strides::Tuple) = @inbounds return __memjumps(tuple(jumps...,(dims[N+1]-1)*strides[N+1]), dims, strides)
 
-@generated function _memjumps{N}(dims::NTuple{N,Int},strides::NTuple{N,Int})
-    meta = Expr(:meta,:inline)
-    ex = Expr(:tuple,[:((dims[$d]-1)*strides[$d]) for d = 1:N]...)
-    Expr(:block, meta, ex)
-end
+_select(src::Tuple, sel::Tuple{Vararg{Int}}) = __select(dst, src, sel)
+@inline __select{N}(dst::NTuple{N}, src, sel::NTuple{N}) = dst
+@inline __select{N}(dst::NTuple{N}, src, sel) = @inbounds return __select(tuple(dst...,src[sel[N+1]]), src, sel)
 
 # Based on Tim Holy's Cartesian
 function _sreplace(ex::Expr, s::Symbol, v)
