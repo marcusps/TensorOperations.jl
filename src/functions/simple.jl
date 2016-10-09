@@ -13,7 +13,7 @@ function tensorcopy(A, IA, IC=IA)
 
     checkindices(A, IA)
     indCinA = add_indices(IA, IC)
-    C = similar_from_indices(eltype(A), indCinA, A)
+    C = similar_from_indices(A, tuple(indCinA...))
     add!(1, A, Val{:N}, 0, C, indCinA)
 end
 
@@ -32,11 +32,11 @@ function tensoradd(A, IA, B, IB, IC=IA)
     checkindices(B, IB)
     T = promote_type(eltype(A), eltype(B))
     if IA == IC
-        C = similar_from_indices(T, 1:numind(A), A)
+        C = similar_from_indices(A, (1:numind(A)...), T)
         copy!(C,A)
     else
         indCinA = add_indices(IA, IC)
-        C = similar_from_indices(T, indCinA, A)
+        C = similar_from_indices(A, tuple(indCinA...), T)
         add_native!(1, A, Val{:N}, 0, C, indCinA)
     end
     indCinB = add_indices(IB, IC)
@@ -50,7 +50,7 @@ Trace or contract pairs of indices of array `A`, by assigning them an identical 
 function tensortrace(A, IA, IC = unique2(IA))
     checkindices(A, IA)
     indCinA, cindA1, cindA2 = trace_indices(IA,IC)
-    C = similar_from_indices(eltype(A), indCinA, A)
+    C = similar_from_indices(A, tuple(indCinA...))
     trace!(1, A, Val{:N}, 0, C, indCinA, cindA1, cindA2)
 end
 
@@ -67,9 +67,8 @@ function tensorcontract(A, IA, B, IB, IC = symdiff(IA,IB); method::Symbol = :BLA
     oindA, cindA, oindB, cindB, indCinoAB = contract_indices(IA, IB, IC)
     indCinAB = vcat(oindA,length(IA)+oindB)[indCinoAB]
 
-    T = promote_type(eltype(A), eltype(B))
-    C = similar_from_indices(T, indCinAB, A, B)
-
+    C = similar_from_indices(A, B, tuple(indCinAB...))
+    
     if method == :BLAS
         contract!(1, A, Val{:N}, B, Val{:N}, 0, C, oindA, cindA, oindB, cindB, indCinoAB,Val{:BLAS})
     elseif method == :native

@@ -22,22 +22,22 @@ Base.eltype(A::SumOfIndexedObjects) = _eltypetuple(A.objects)
 *(β::Number, A::SumOfIndexedObjects) = SumOfIndexedObjects(_multuple(β, A.objects))
 -(A::SumOfIndexedObjects) = *(-1, A)
 
-indices{Os}(A::SumOfIndexedObjects{Os}) = indices(Os.parameters[1])
+indexlabels{Os}(A::SumOfIndexedObjects{Os}) = indexlabels(Os.parameters[1])
 
 function +(A::SumOfIndexedObjects, B::SumOfIndexedObjects)
     add_indices(indices(A), indices(B)) # performs index check
     SumOfIndexedObjects(tuple(A.objects..., B.objects...))
 end
 function +(A::SumOfIndexedObjects, b::AbstractIndexedObject)
-    add_indices(indices(A), indices(b)) # performs index check
+    add_indices(indexlabels(A), indexlabels(b)) # performs index check
     SumOfIndexedObjects(tuple(A.objects..., b))
 end
 function +(a::AbstractIndexedObject, B::SumOfIndexedObjects)
-    add_indices(indices(a), indices(B)) # performs index check
+    add_indices(indexlabels(a), indexlabels(B)) # performs index check
     SumOfIndexedObjects(tuple(a, B.objects...))
 end
 function +(a::AbstractIndexedObject, b::AbstractIndexedObject)
-    add_indices(indices(a), indices(b)) # performs index check
+    add_indices(indexlabels(a), indexlabels(b)) # performs index check
     SumOfIndexedObjects(tuple(a, b))
 end
 

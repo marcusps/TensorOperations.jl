@@ -15,7 +15,7 @@ _memjumps{N}(dims::NTuple{N,Int},strides::NTuple{N,Int}) = __memjumps((), dims, 
 @inline __memjumps{N}(jumps::NTuple{N}, dims::NTuple{N}, strides::NTuple{N}) = jumps
 @inline __memjumps{N}(jumps::NTuple{N}, dims::Tuple, strides::Tuple) = @inbounds return __memjumps(tuple(jumps...,(dims[N+1]-1)*strides[N+1]), dims, strides)
 
-_select(src::Tuple, sel::Tuple{Vararg{Int}}) = __select(dst, src, sel)
+_select(src::Tuple, sel::Tuple{Vararg{Int}}) = __select((), src, sel)
 @inline __select{N}(dst::NTuple{N}, src, sel::NTuple{N}) = dst
 @inline __select{N}(dst::NTuple{N}, src, sel) = @inbounds return __select(tuple(dst...,src[sel[N+1]]), src, sel)
 

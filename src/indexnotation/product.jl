@@ -16,7 +16,7 @@ Base.eltype(P::ProductOfIndexedObjects) = promote_type(eltype(P.A),eltype(P.B))
 *(β::Number, P::ProductOfIndexedObjects) = *(P,β)
 -(P::ProductOfIndexedObjects) = *(-1, P)
 
-@generated function indices{IA,IB,CA,CB,OA,OB,TA,TB}(::Type{ProductOfIndexedObjects{IA,IB,CA,CB,OA,OB,TA,TB}})
+@generated function indexlabels{IA,IB,CA,CB,OA,OB,TA,TB}(::Type{ProductOfIndexedObjects{IA,IB,CA,CB,OA,OB,TA,TB}})
     J = unique2([IA...,IB...])
     J = tuple(J...)
     meta = Expr(:meta, :inline)
@@ -24,8 +24,8 @@ Base.eltype(P::ProductOfIndexedObjects) = promote_type(eltype(P.A),eltype(P.B))
 end
 
 @generated function *(A::AbstractIndexedObject,B::AbstractIndexedObject)
-    IA = indices(A)
-    IB = indices(B)
+    IA = indexlabels(A)
+    IB = indexlabels(B)
     IC = symdiff(IA,IB)
     oindA, cindA, oindB, cindB, = contract_indices(IA,IB,IC)
     meta = Expr(:meta,:inline)
@@ -52,12 +52,12 @@ end
 @generated function deindexify{IA,IB,CA,CB,IC}(P::ProductOfIndexedObjects{IA,IB,CA,CB}, I::Indices{IC}, T::Type = eltype(P))
     meta = Expr(:meta, :inline)
     oindA, cindA, oindB, cindB, indCinoAB = contract_indices(IA, IB, IC)
-    indCinAB = vcat(oindA,length(IA)+oindB)[indCinoAB]
+    indCinAB = tuple(vcat(oindA,length(IA)+oindB)[indCinoAB]...)
     conjA = Val{CA}
     conjB = Val{CB}
     quote
         $meta
-        deindexify!(similar_from_indices(T, $indCinAB, P.A.object, P.B.object, $conjA, $conjB), P, I)
+        deindexify!(similar_from_indices(P.A.object, P.B.object, $indCinAB, T, $conjA, $conjB), P, I)
     end
 end
 

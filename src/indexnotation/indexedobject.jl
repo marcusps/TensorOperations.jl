@@ -10,7 +10,7 @@ immutable Indices{I}
 end
 
 abstract AbstractIndexedObject
-indices(a::AbstractIndexedObject) = indices(typeof(a))
+indexlabels(a::AbstractIndexedObject) = indexlabels(typeof(a))
 
 immutable IndexedObject{I,C,A,T} <: AbstractIndexedObject
     object::A
@@ -32,7 +32,7 @@ Base.eltype{I,C, A, T}(::Type{IndexedObject{I,C, A, T}}) = promote_type(eltype(A
 *(β::Number, a::IndexedObject) = *(a, β)
 -(a::IndexedObject) = *(a, -1)
 
-@generated function indices{I,C,A,T}(::Type{IndexedObject{I,C,A,T}})
+@generated function indexlabels{I,C,A,T}(::Type{IndexedObject{I,C,A,T}})
     J = tuple(unique2(I)...)
     meta = Expr(:meta, :inline)
     Expr(:block, meta, :($J))
@@ -46,10 +46,11 @@ deindexify{I}(A::IndexedObject{I,:C}, ::Indices{I}) = A.α == 1 ? conj(A.object)
 @generated function deindexify{I,C,J}(A::IndexedObject{I,C}, ::Indices{J}, T::Type = eltype(A))
     meta = Expr(:meta, :inline)
     indCinA, = trace_indices(I,J)
-    conj = Val{C}
+    indCinA = tuple(indCinA...)
+    conj = Val{:C}
     quote
         $meta
-        deindexify!(similar_from_indices(T, $indCinA, A.object, $conj), A, Indices{$J}())
+        deindexify!(similar_from_indices(A.object, $indCinA, T, $conj), A, Indices{$J}())
     end
 end
 
